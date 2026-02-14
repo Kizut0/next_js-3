@@ -1,8 +1,11 @@
-import { ensureIndexes } from "@/lib/ensureIndexes";
+import { ensureIndexes } from "@/lib/ensure.Indexes";
 import { NextResponse } from "next/server";
+
 export async function GET(request) {
-    const { searchParams } = new URL(request.url);
+    const {searchParams} = new URL(request.url);
     const challenge = searchParams.get("pass") ?? false;
+
+
     if (!challenge) {
         return NextResponse.json({
             message: "Invalid usage"
@@ -19,5 +22,5 @@ export async function GET(request) {
         })
     }
     const result = await ensureIndexes();
-    return NextResponse.json({ message: "Indexes ensured" }); 
+    return NextResponse.json({message: "Indexes ensured"}); 
 }

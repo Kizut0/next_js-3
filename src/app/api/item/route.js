@@ -53,17 +53,25 @@ export async function GET(req) {
  * POST /api/item
  */
 export async function POST(req) {
+  let body = {};
   try {
-    const body = await req.json();
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { message: "Invalid JSON body" },
+      { status: 400, headers: corsHeaders }
+    );
+  }
+  try {
 
-    const itemNameRaw = body.itemName != null ? String(body.itemName).trim() : "";
-    const itemCategoryRaw = body.itemCategory != null ? String(body.itemCategory).trim() : "";
-    const itemPriceRaw = body.itemPrice != null ? Number(body.itemPrice) : null;
+    const itemName = (body.itemName ?? "").trim();
+    const itemCategory = (body.itemCategory ?? "").trim();
+    const itemPrice = Number(body.itemPrice);
     const status = String(body.status ?? "ACTIVE").trim().toUpperCase();
 
-    if (itemPriceRaw != null && Number.isNaN(itemPriceRaw)) {
+    if (!itemName || !itemCategory || Number.isNaN(itemPrice)) {
       return NextResponse.json(
-        { message: "Invalid field: itemPrice" },
+        { message: "Missing/invalid fields: itemName, itemCategory, itemPrice" },
         { status: 400, headers: corsHeaders }
       );
     }
@@ -74,17 +82,14 @@ export async function POST(req) {
     const client = await getClientPromise();
     const db = client.db(DB_NAME);
 
-    const insertDoc = {
+    const result = await db.collection(COLLECTION).insertOne({
+      itemName,
+      itemCategory,
+      itemPrice,
       status: safeStatus,
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
-
-    if (itemNameRaw) insertDoc.itemName = itemNameRaw;
-    if (itemCategoryRaw) insertDoc.itemCategory = itemCategoryRaw;
-    if (itemPriceRaw != null) insertDoc.itemPrice = itemPriceRaw;
-
-    const result = await db.collection(COLLECTION).insertOne(insertDoc);
+    });
 
     return NextResponse.json(
       { id: result.insertedId },
